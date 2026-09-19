@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="B2B OTA Automation Suite" parallel="methods" thread-count="3" verbose="1">
+
+    <listeners>
+        <listener class-name="com.takeoff.listeners.TestListener"/>
+    </listeners>
+
+    <test name="Login Tests">
+        <classes>
+            <class name="com.takeoff.tests.LoginTests"/>
+        </classes>
+    </test>
+
+    <test name="Search Tests">
+        <classes>
+            <class name="com.takeoff.tests.SearchTests"/>
+        </classes>
+    </test>
+
+    <test name="Booking Tests">
+        <classes>
+            <class name="com.takeoff.tests.BookingTests"/>
+        </classes>
+    </test>
+
+    <test name="Topup Request Tests">
+        <classes>
+            <class name="com.takeoff.tests.TopupRequestTests"/>
+        </classes>
+    </test>
+
+    <test name="Topup Approval Tests">
+        <classes>
+            <class name="com.takeoff.tests.TopupApprovalTests"/>
+        </classes>
+    </test>
+
+</suite>
