@@ -17,9 +17,14 @@ public abstract class BaseTest {
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
-        page = PlaywrightFactory.initBrowser();
+        page = PlaywrightFactory.initBrowser(slowMoMs());
         page.navigate(ConfigManager.b2bUrl());
         new HomePage(page).dismissPromoDialogIfPresent();
+    }
+
+    /** Override to slow a specific test class down for visual observation. */
+    protected double slowMoMs() {
+        return ConfigManager.slowMoMs();
     }
 
     @AfterMethod(alwaysRun = true)

@@ -42,6 +42,12 @@ public class TopupApprovalTests extends BaseTest {
 
     private static final Path RECEIPT = Path.of("src/test/resources/attachments/dummy-receipt.png");
 
+    /** Slowed down from config.properties' default so the flow is easy to watch/verify visually. */
+    @Override
+    protected double slowMoMs() {
+        return 500;
+    }
+
     private String uniqueReference() {
         return "REF-AUTOTEST-" + System.currentTimeMillis();
     }

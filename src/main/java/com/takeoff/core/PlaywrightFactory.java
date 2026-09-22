@@ -23,6 +23,16 @@ public final class PlaywrightFactory {
     }
 
     public static Page initBrowser() {
+        return initBrowser(ConfigManager.slowMoMs());
+    }
+
+    /**
+     * @param slowMoMs overrides config.properties' {@code slowmo.ms} for this browser
+     *                 only - lets a specific test class run slower for visual
+     *                 observation without affecting other classes running in
+     *                 parallel (see {@code testng.xml}'s {@code parallel="methods"}).
+     */
+    public static Page initBrowser(double slowMoMs) {
         Playwright playwright = Playwright.create();
         PLAYWRIGHT.set(playwright);
 
@@ -30,7 +40,7 @@ public final class PlaywrightFactory {
 
         BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
                 .setHeadless(headless)
-                .setSlowMo(ConfigManager.slowMoMs());
+                .setSlowMo(slowMoMs);
         // Headed runs: let Chrome open at its natural OS window size instead of a
         // fixed viewport, otherwise the page can render cropped/mismatched against
         // the actual window on screens that aren't exactly viewport-sized.
