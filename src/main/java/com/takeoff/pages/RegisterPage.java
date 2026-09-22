@@ -5,8 +5,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
-import java.nio.file.Path;
-
 /**
  * "Register" (the homepage's "Become a Takeoff Travels" card, route
  * {@code /signup}) - creates a new agency account. Submitting does not move
@@ -14,10 +12,10 @@ import java.nio.file.Path;
  * click {@link #signUp()} for real; unlike Booking's "Confirm Booking" this
  * is not a direct financial transaction (confirmed with the user).
  *
- * <p>NID Number and the NID upload are the only optional fields - Username,
- * Email, Mobile Number, Address, Password and Confirm Password are all
- * required (submit stays disabled until they're filled, passwords match, and
- * the "agree to Terms" checkbox is checked).
+ * <p>Only the happy path (required fields, no NID) is covered - Username,
+ * Email, Mobile Number, Address, Password and Confirm Password are required
+ * (submit stays disabled until they're filled, passwords match, and the
+ * "agree to Terms" checkbox is checked).
  */
 public class RegisterPage extends BasePage {
 
@@ -25,14 +23,11 @@ public class RegisterPage extends BasePage {
     private final Locator emailInput;
     private final Locator phoneInput;
     private final Locator addressInput;
-    private final Locator nidNoInput;
-    private final Locator nidUploadInput;
     private final Locator passwordInput;
     private final Locator confirmPasswordInput;
     private final Locator agreeCheckbox;
     private final Locator submitButton;
     private final Locator successToast;
-    private final Locator passwordMismatchError;
 
     public RegisterPage(Page page) {
         super(page);
@@ -40,14 +35,11 @@ public class RegisterPage extends BasePage {
         this.emailInput = page.locator("#email");
         this.phoneInput = page.locator("#phoneNo");
         this.addressInput = page.locator("#address");
-        this.nidNoInput = page.locator("#nidNo");
-        this.nidUploadInput = page.locator("input[type='file']");
         this.passwordInput = page.locator("#password");
         this.confirmPasswordInput = page.locator("#confirmPassword");
         this.agreeCheckbox = page.locator("#agree");
         this.submitButton = page.locator("button[type='submit']");
         this.successToast = page.getByText("Registration Successful");
-        this.passwordMismatchError = page.getByText("Passwords do not match");
     }
 
     /** Navigates here via the "Register" link on the homepage login card. */
@@ -56,26 +48,13 @@ public class RegisterPage extends BasePage {
         page.waitForURL("**/signup", new Page.WaitForURLOptions().setTimeout(15000));
     }
 
-    /** Fills every required field, plus the optional NID number if given (null to skip). */
-    public void fillRequired(String username, String email, String phone, String address,
-                              String password, String nidNo) {
+    public void fillRequired(String username, String email, String phone, String address, String password) {
         usernameInput.fill(username);
         emailInput.fill(email);
         phoneInput.fill(phone);
         addressInput.fill(address);
         passwordInput.fill(password);
         confirmPasswordInput.fill(password);
-        if (nidNo != null) {
-            nidNoInput.fill(nidNo);
-        }
-    }
-
-    public void fillConfirmPassword(String value) {
-        confirmPasswordInput.fill(value);
-    }
-
-    public void attachNid(Path filePath) {
-        nidUploadInput.setInputFiles(filePath);
     }
 
     public void agreeToTerms() {
@@ -94,25 +73,6 @@ public class RegisterPage extends BasePage {
     public boolean isSuccessToastVisible() {
         try {
             successToast.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(15000));
-            return true;
-        } catch (PlaywrightException timedOut) {
-            return false;
-        }
-    }
-
-    public boolean isPasswordMismatchErrorVisible() {
-        try {
-            passwordMismatchError.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(3000));
-            return true;
-        } catch (PlaywrightException timedOut) {
-            return false;
-        }
-    }
-
-    /** e.g. "This email already exists." after resubmitting a duplicate email. */
-    public boolean isErrorToastVisible(String message) {
-        try {
-            page.getByText(message).waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(15000));
             return true;
         } catch (PlaywrightException timedOut) {
             return false;
