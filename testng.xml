@@ -24,6 +24,12 @@
         </classes>
     </test>
 
+    <test name="Group Fare Tests">
+        <classes>
+            <class name="com.takeoff.tests.GroupFareTests"/>
+        </classes>
+    </test>
+
     <test name="Topup Request Tests">
         <classes>
             <class name="com.takeoff.tests.TopupRequestTests"/>
