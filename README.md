@@ -9,6 +9,12 @@ UI test automation for the Takeoff B2B agent portal, built with Java 21 + Playwr
 - **Allure** — HTML reporting with screenshots on failure
 - **Maven** — build/dependency management
 
+## My Contribution
+Designed and developed the automation framework using Java 21 and Playwright.
+Implemented reusable Page Object Model (POM) components and test execution with TestNG.
+Configured Maven, Allure reporting, and GitHub Actions CI workflow.
+Developed automated test flows for OTA B2B Agent and Admin portals.
+
 ## Project layout
 
 ```
