@@ -11,7 +11,7 @@ import com.microsoft.playwright.Page;
  * <p>A successful login can land on an "Authenticator Setup" (TOTP QR code)
  * screen instead of the dashboard. That screen only occupies the main content
  * pane, not a blocking overlay - the sidebar underneath is still fully
- * interactive, so navigation (see {@link TopupApprovalPage}) works right
+ * interactive, so navigation (see {@link TopupRequestPage}) works right
  * through it without completing 2FA enrollment.
  */
 public class AdminLoginPage extends BasePage {

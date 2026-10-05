@@ -9,7 +9,7 @@ import com.microsoft.playwright.options.WaitForSelectorState;
  * Admin portal &gt; B2B Management &gt; Requested Agent / Approved Agent. An
  * admin reviews a newly self-registered agency here (see {@link RegisterPage}).
  * Approve only changes the request's status - unlike Balance Management's
- * topup Approve (see {@link TopupApprovalPage}), it doesn't move money - so
+ * topup Approve (see {@link TopupRequestPage}), it doesn't move money - so
  * tests click through for real (confirmed with the user).
  *
  * <p>Approve fails with a "Postal Code Is Required" validation unless the

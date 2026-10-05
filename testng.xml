@@ -30,15 +30,9 @@
         </classes>
     </test>
 
-    <test name="Topup Request Tests">
+    <test name="Topup Request Tests" parallel="false">
         <classes>
             <class name="com.takeoff.tests.TopupRequestTests"/>
-        </classes>
-    </test>
-
-    <test name="Topup Approval Tests">
-        <classes>
-            <class name="com.takeoff.tests.TopupApprovalTests"/>
         </classes>
     </test>
 

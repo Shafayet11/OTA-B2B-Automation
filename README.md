@@ -26,13 +26,15 @@ src/main/java/com/takeoff/
                 AdminBaseTest        - same as BaseTest, but for the Admin portal
                 AdminAuthenticatedTest - AdminBaseTest + logs in as admin
   pages/        Page Objects         - HomePage, LoginPage, SearchPage, BookingPage,
-                                       PaymentRequestPage (B2B agent portal, shadcn/radix
-                                       forms - see "Notable gotchas" below), AdminLoginPage,
-                                       TopupApprovalPage (Admin portal, Angular forms), and
+                                       TopupRequestPage (both the B2B agent portal's
+                                       "Payment Request" submission form, shadcn/radix
+                                       forms - see "Notable gotchas" below, and the Admin
+                                       portal's Balance Management > Topup > View Request
+                                       review screen, Angular forms), AdminLoginPage, and
                                        BasePage (shared helpers)
   listeners/    TestListener         - attaches a screenshot to Allure on failure
 
-src/test/java/com/takeoff/tests/     - LoginTests, SearchTests, BookingTests, TopupRequestTests, TopupApprovalTests
+src/test/java/com/takeoff/tests/     - LoginTests, SearchTests, BookingTests, TopupRequestTests
 src/test/resources/config.properties - default config (no real secrets committed)
 src/test/resources/attachments/      - dummy file used for required file-upload fields
 testng.xml                           - full suite, parallel="methods"
@@ -62,35 +64,40 @@ click it). `BookingPage.confirmBooking()` exists only for manual/exploratory
 use — do not call it from automated tests unless the environment changes
 and this is explicitly re-confirmed.
 
-- **Payment Request** (`/topup-request`) — an agent submits a deposit/top-up
-  request for someone else to review. Unlike "Confirm Booking," submitting
-  here does not move money by itself, so `TopupRequestTests` clicks Submit
-  for real; each run leaves a new request record behind. All 6 deposit types
-  (Cheque, Bank Deposit, Bank Transfer, Cash, Bkash, Nagad) have fill methods
-  on `PaymentRequestPage`; **Cash, Bkash and Nagad** currently work
-  end-to-end in this environment — see "Known environment bugs" below for
-  why Cheque, Bank Deposit and Bank Transfer are still disabled.
+- **Topup Request** (`/topup-request`, "Payment Request" in the sidebar) — an
+  agent submits a deposit/top-up request for someone else to review. Unlike
+  "Confirm Booking," submitting here does not move money by itself, so
+  `TopupRequestTests` clicks Submit for real; each run leaves a new request
+  record behind. All 6 deposit types (Cheque, Bank Deposit, Bank Transfer,
+  Cash, Bkash, Nagad) have fill methods on `TopupRequestPage`; **Cash, Bkash
+  and Nagad** currently work end-to-end in this environment — see "Known
+  environment bugs" below for why Cheque, Bank Deposit and Bank Transfer are
+  still disabled.
 
 - **Topup Approval** (Admin portal &gt; Balance Management &gt; Topup &gt;
   View Request) — an admin reviews a top-up request an agent submitted.
-  `TopupApprovalTests` logs in as the B2B agent, submits a fresh request,
-  then switches to the Admin portal to open it, fill Admin Reference/Remarks,
-  and assert Approve is enabled. Covers the 3 deposit types that currently
-  submit successfully (Cash, Bkash, Nagad) — same reasoning as Payment
-  Request above for why Cheque/Bank Deposit/Bank Transfer aren't covered
-  (no request to review if submission itself is blocked).
+  Also covered by `TopupRequestTests`, same file/page object as the request
+  side above: each review test submits a fresh request as the B2B agent,
+  then switches the same browser tab to the Admin portal to open it and fill
+  Admin Reference/Remarks. Covers the 3 deposit types that currently submit
+  successfully (Cash, Bkash, Nagad) — same reasoning as Topup Request above
+  for why Cheque/Bank Deposit/Bank Transfer aren't covered (no request to
+  review if submission itself is blocked).
 
-⚠️ **TopupApprovalTests never clicks "Approve."** Approving credits the
-agent's account balance for real — same category as Booking's "Confirm
-Booking." Tests fill every required field and assert Approve is enabled,
-but never click it. `TopupApprovalPage.approve()` exists only for manual/
-exploratory use — do not call it from automated tests unless this is
+⚠️ **Approving credits the agent's account balance for real** — same
+category as Booking's "Confirm Booking." Most review tests only assert
+Approve is enabled without clicking it, but one test
+(`adminApprovingCashDepositRequestCreditsAgentLedger`) does click it for
+real, by explicit user instruction, then switches back to the agent portal
+and asserts the credit appears on Reports &gt; Ledger Report. Every other
+place `TopupRequestPage.approve()` could be called, treat the same as
+`BookingPage.confirmBooking()` — do not call it without this being
 explicitly re-confirmed.
 
 The Admin portal also gates login behind a TOTP "Authenticator Setup" QR
 screen and, when actually approving, a separate Admin PIN dialog (see
 `admin.pin` below) — neither blocks the read/fill flow these tests use;
-see `AdminLoginPage` and `TopupApprovalPage` javadoc for details.
+see `AdminLoginPage` and `TopupRequestPage` javadoc for details.
 
 ## Known environment bugs (not test issues)
 
@@ -128,7 +135,7 @@ been modified"~~ — fixed as of 2026-09-16; both now pass end-to-end.
    | `admin.pin`     | `ADMIN_PIN`       |
 
    `admin.*` are a separate Admin-portal account/role from `email`/`password`
-   above, used by `TopupApprovalTests`. `admin.pin` is the PIN the Admin
+   above, used by `TopupRequestTests`. `admin.pin` is the PIN the Admin
    portal asks for as a second confirmation step before actually approving a
    request — not needed for the fill/assert-enabled flow the tests use, but
    configured for completeness/manual use.
@@ -209,3 +216,10 @@ Set `B2B_URL`, `ADMIN_URL`, `TEST_EMAIL`, `TEST_PASSWORD` as repository secrets 
 - The Payment Request attachment dropzone has no visible required-field
   asterisk, but submission is rejected with "Attachment is required!"
   without one — always attach a file (see `src/test/resources/attachments/`).
+- Admin "Approve" on a top-up request enforces a unique Admin Reference -
+  reusing one (even across unrelated requests) fails with "Referance Already
+  Exist" in the response body despite an HTTP 200, with no visible toast or
+  UI change (the request just silently stays "Requested"). Reject/Pending
+  don't enforce this, since only Approve posts a real ledger transaction.
+  Generate a fresh Admin Reference per run, same as the agent-side deposit
+  reference.
