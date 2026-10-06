@@ -30,6 +30,7 @@ public class SearchPage extends BasePage {
     private final Locator flightDetailsLinks;
     private final Locator selectButtons;
     private final Locator viewPriceButtons;
+    private final Locator airlineCodeInput;
 
     public SearchPage(Page page) {
         super(page);
@@ -42,15 +43,35 @@ public class SearchPage extends BasePage {
         this.flightDetailsLinks = page.locator("text=Flight Details");
         this.selectButtons = page.locator("button:has-text('Select')");
         this.viewPriceButtons = page.locator("button:has-text('View Price')");
+        this.airlineCodeInput = page.locator("input[placeholder='Example: BS, VQ TK']");
     }
 
     /** Runs a full one-way search: origin, destination, date, then submits. */
     public void searchOneWayFlight(String originQuery, String originCode,
                                     String destinationQuery, String destinationCode,
                                     LocalDate departureDate) {
+        searchOneWayFlight(originQuery, originCode, destinationQuery, destinationCode, departureDate, null);
+    }
+
+    /**
+     * Same as {@link #searchOneWayFlight(String, String, String, String, LocalDate)},
+     * but narrows results to one airline code (e.g. "BS" for US-Bangla) via the
+     * search form's own airline filter. Which airlines actually fly a given
+     * route/date isn't stable - e.g. DAC-DXB has come back Emirates-only
+     * (non-refundable NDC fares, no Branded "View Price" option) on some
+     * dates and US-Bangla on others - so callers that depend on a specific
+     * airline's fare behavior (Refund needs a refundable fare) should filter
+     * explicitly rather than assume index 0 is bookable the same way every day.
+     */
+    public void searchOneWayFlight(String originQuery, String originCode,
+                                    String destinationQuery, String destinationCode,
+                                    LocalDate departureDate, String airlineCode) {
         selectOrigin(originQuery, originCode);
         selectDestination(destinationQuery, destinationCode);
         selectDepartureDate(departureDate);
+        if (airlineCode != null && !airlineCode.isEmpty()) {
+            airlineCodeInput.fill(airlineCode);
+        }
         submitSearch();
     }
 

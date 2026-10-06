@@ -9,11 +9,14 @@ import java.time.LocalDate;
 
 /**
  * The traveler-details step at "/flights/form", reached after selecting a
- * fare (Regular or Branded) on the results page. IMPORTANT: automated tests
+ * fare (Regular or Branded) on the results page. IMPORTANT: {@code BookingTests}
  * must never call {@link #confirmBooking()} against this environment - it
  * submits a real reservation against live fare inventory and charges the
- * agent's account balance (confirmed with the team; see BookingTests). It's
- * kept here only for manual/exploratory use.
+ * agent's account balance (confirmed with the team). The one exception is
+ * {@code RefundTests}, which needs an actually-issued ticket to test the
+ * Refund button against and so drives this for real (confirmed with the user)
+ * - see {@link RefundPage} for the rest of that flow (review and ticket
+ * issuance), which picks up right after {@link #confirmBooking()}.
  */
 public class BookingPage extends BasePage {
 

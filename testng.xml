@@ -36,4 +36,10 @@
         </classes>
     </test>
 
+    <test name="Refund Tests" parallel="false">
+        <classes>
+            <class name="com.takeoff.tests.RefundTests"/>
+        </classes>
+    </test>
+
 </suite>

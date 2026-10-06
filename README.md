@@ -26,6 +26,9 @@ src/main/java/com/takeoff/
                 AdminBaseTest        - same as BaseTest, but for the Admin portal
                 AdminAuthenticatedTest - AdminBaseTest + logs in as admin
   pages/        Page Objects         - HomePage, LoginPage, SearchPage, BookingPage,
+                                       RefundPage (ticket issuance past where
+                                       BookingPage stops, and the full Refund
+                                       flow - see "Covered flows" below),
                                        TopupRequestPage (both the B2B agent portal's
                                        "Payment Request" submission form, shadcn/radix
                                        forms - see "Notable gotchas" below, and the Admin
@@ -34,7 +37,7 @@ src/main/java/com/takeoff/
                                        BasePage (shared helpers)
   listeners/    TestListener         - attaches a screenshot to Allure on failure
 
-src/test/java/com/takeoff/tests/     - LoginTests, SearchTests, BookingTests, TopupRequestTests
+src/test/java/com/takeoff/tests/     - LoginTests, SearchTests, BookingTests, TopupRequestTests, RefundTests
 src/test/resources/config.properties - default config (no real secrets committed)
 src/test/resources/attachments/      - dummy file used for required file-upload fields
 testng.xml                           - full suite, parallel="methods"
@@ -98,6 +101,29 @@ The Admin portal also gates login behind a TOTP "Authenticator Setup" QR
 screen and, when actually approving, a separate Admin PIN dialog (see
 `admin.pin` below) — neither blocks the read/fill flow these tests use;
 see `AdminLoginPage` and `TopupRequestPage` javadoc for details.
+
+- **Refund** — after a ticket is issued, a "Refund" button appears at the
+  bottom of its ticket copy. `RefundTests` drives the whole thing for real:
+  search → book → issue a ticket with Full Payment → click Refund → select
+  the segment/passenger → get a quotation → Accept (or Reject, then
+  re-request and Accept to recover the value - see below). The resulting
+  quotation can be generated automatically or require an admin to create one
+  manually via the Admin portal's "Refund Request" module — not predictable
+  in advance (confirmed with the user); every quotation seen so far came back
+  automatic, so the manual/admin-created path is unexplored.
+
+  ⚠️ **Unlike `BookingTests`, `RefundTests` really does click "Confirm
+  Booking" and "Issue Ticket"** — testing the Refund button needs an
+  actually-issued ticket, so there is no way around this (confirmed with the
+  user). Both Accept and Reject are also real: Accept returns the ticket to
+  the airline against its fare rules and credits the refundable amount back;
+  Reject doesn't move money and leaves the ticket Eligible again, so
+  `agentCanRejectARefundQuotation` finishes by re-requesting and accepting on
+  the same ticket rather than leaving a fully-paid, never-refunded ticket
+  behind. Every run of this file is still a real net loss of the airline
+  penalty plus service charge (observed ~BDT 13,000 on a ~36,000 BDT fare) —
+  issuing and fully refunding a real ticket isn't free even on the happy
+  path. See `RefundPage` javadoc for the mechanics.
 
 ## Known environment bugs (not test issues)
 
@@ -223,3 +249,33 @@ Set `B2B_URL`, `ADMIN_URL`, `TEST_EMAIL`, `TEST_PASSWORD` as repository secrets 
   don't enforce this, since only Approve posts a real ledger transaction.
   Generate a fresh Admin Reference per run, same as the agent-side deposit
   reference.
+- The full ticket-issuance flow (past `BookingPage.confirmBooking()`) steps
+  through a Review page (Terms & Conditions checkbox) and a fuller "Provide
+  Traveller Details" page (passport/document fields) before reaching the Hold
+  booking - but which of the two actually renders, and in what order, isn't
+  consistent run to run; either can be skipped straight to the Hold booking.
+  `RefundPage.agreeAndConfirmReview()` handles this by reacting to whichever
+  page is actually showing rather than assuming a fixed sequence. Several of
+  these screens also show a loading spinner after a "Confirm Booking"/"Issue
+  Ticket" click that can stay visible well past a minute even though the
+  backend already finished the step (confirmed by checking the booking list
+  directly) - `RefundPage` polls for the real result instead of waiting on
+  the page.
+- The detailed "Provide Traveller Details" step's name fields reject digits
+  ("only letters and single spaces are allowed") with no indication beyond a
+  small red inline error - a disabled "Confirm Booking" with no visible cause
+  otherwise. Any generated-unique traveler name needs a letters-only suffix
+  (see `RefundTests.uniqueAlphaSuffix()`), not the digit suffixes used
+  elsewhere (passport/email/phone have no such restriction).
+- The Refund Ticket Request form's passenger row (and its checkbox) can
+  finish rendering slightly after the segment row's - counting checkboxes
+  before the passenger's "Eligible" status shows up can silently miss it and
+  leave "Get Quotation" permanently disabled. `RefundPage.selectAllForRefund()`
+  waits for "Eligible" first.
+- Which airlines actually serve a given route/date isn't stable - DAC-DXB has
+  come back Emirates-only (non-refundable NDC fares with no "View Price"
+  Branded-fare option, and a traveler-details flow `BookingPage` doesn't
+  reach the same way) on some dates, and US-Bangla on others. `RefundTests`
+  filters the search by airline code ("BS") via the search form's own airline
+  filter (`SearchPage.searchOneWayFlight(..., String airlineCode)`) rather
+  than trusting whichever airline index 0 happens to be that day.
